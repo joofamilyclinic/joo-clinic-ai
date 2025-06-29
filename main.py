@@ -37,7 +37,23 @@ def language_handler():
 
 @app.route("/webhook/recording_done", methods=["POST"])
 def recording_done():
-    return Response("Thank you. Your message has been received.", mimetype="text/plain")
+    recording_url = request.form.get("RecordingUrl")
+    caller = request.form.get("From")
+    timestamp = datetime.datetime.utcnow().isoformat()
+
+    try:
+        requests.post(ZAPIER_WEBHOOK_URL, json={
+            "caller": caller,
+            "recording_url": recording_url,
+            "timestamp": timestamp
+        })
+    except Exception as e:
+        print("Zapier error:", str(e))
+
+    response = VoiceResponse()
+    response.say("Thank you. Your message has been received.", language="en-US")
+    response.hangup()
+    return Response(str(response), mimetype="text/xml")
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=3000)
