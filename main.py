@@ -1,5 +1,7 @@
 from flask import Flask, request, Response
 from twilio.twiml.voice_response import VoiceResponse, Gather
+import requests
+import datetime
 
 app = Flask(__name__)
 
