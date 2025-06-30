@@ -34,7 +34,14 @@ def language_handler():
         response.hangup()
         return Response(str(response), mimetype="text/xml")
 
-    response.record(timeout=10, max_length=60, action="/webhook/recording_done", play_beep=True)
+    response.record(
+    timeout=10,
+    max_length=60,
+    action="/webhook/recording_done",
+    play_beep=True,
+    transcribe=True,
+    transcribe_callback="/webhook/transcription_done"
+)
     return Response(str(response), mimetype="text/xml")
 
 @app.route("/webhook/recording_done", methods=["POST"])
@@ -59,3 +66,22 @@ def recording_done():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=3000)
+
+@app.route("/webhook/transcription_done", methods=["POST"])
+def transcription_done():
+    transcription_text = request.form.get("TranscriptionText")
+    recording_url = request.form.get("RecordingUrl")
+    caller = request.form.get("From")
+    timestamp = datetime.datetime.utcnow().isoformat()
+
+    try:
+        requests.post(ZAPIER_WEBHOOK_URL, json={
+            "caller": caller,
+            "recording_url": recording_url,
+            "transcription": transcription_text,
+            "timestamp": timestamp
+        })
+    except Exception as e:
+        print("Zapier error:", str(e))
+
+    return Response("OK", mimetype="text/plain")
